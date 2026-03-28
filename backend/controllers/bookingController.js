@@ -16,7 +16,7 @@ const getSeats = async (req, res) => {
       const seatsPerRow = 10;
       const insertSeats = [];
       for (let r = 0; r < rows_labels.length; r++) {
-        const seatType = r < 2 ? "recliner" : r < 5 ? "premium" : "standard";
+        const seatType = r < 4 ? "standard" : r < 7 ? "premium" : "recliner";
         for (let s = 1; s <= seatsPerRow; s++) {
           insertSeats.push([showtimeId, `${rows_labels[r]}${s}`, rows_labels[r], seatType, false]);
         }

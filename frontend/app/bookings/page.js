@@ -5,7 +5,7 @@ import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { bookingsAPI } from "../lib/api";
 import useAuthStore from "../hooks/useAuthStore";
-import { Ticket, MapPin, Calendar, Clock, Film, X, CheckCircle, AlertCircle, ChevronRight } from "lucide-react";
+import { Ticket, MapPin, Calendar, Clock, Film, CheckCircle, AlertCircle } from "lucide-react";
 import toast from "react-hot-toast";
 
 const TMDB_BACKDROP = (path) => path ? `https://image.tmdb.org/t/p/w500${path}` : null;
@@ -14,17 +14,36 @@ export default function BookingsPage() {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState(null);
-  const { isAuthenticated, init } = useAuthStore();
+  const { token, isHydrated, init } = useAuthStore();
   const router = useRouter();
 
   useEffect(() => {
     init();
-    if (!isAuthenticated()) { router.push("/login"); return; }
+  }, [init]);
+
+  useEffect(() => {
+    if (!isHydrated) return;
+    if (!token) { router.push("/login"); return; }
     bookingsAPI.myBookings()
       .then(({ data }) => setBookings(data))
       .catch(() => toast.error("Failed to load bookings"))
       .finally(() => setLoading(false));
-  }, []);
+  }, [isHydrated, token, router]);
+
+  useEffect(() => {
+    const nodes = document.querySelectorAll(".scroll-reveal");
+    if (!nodes.length) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) entry.target.classList.add("is-visible");
+        });
+      },
+      { threshold: 0.12 }
+    );
+    nodes.forEach((node) => observer.observe(node));
+    return () => observer.disconnect();
+  }, [bookings]);
 
   const handleCancel = async (id) => {
     if (!confirm("Are you sure you want to cancel this booking?")) return;
@@ -48,7 +67,7 @@ export default function BookingsPage() {
       <Navbar />
       <div className="pt-20 max-w-4xl mx-auto px-4 sm:px-6 py-8">
         <div className="flex items-center gap-3 mb-8">
-          <div className="w-10 h-10 rounded-xl bg-red-600/15 border border-red-500/20 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-xl bg-red-600/15 border border-red-500/25 flex items-center justify-center">
             <Ticket size={18} className="text-red-500" />
           </div>
           <div>
@@ -79,7 +98,7 @@ export default function BookingsPage() {
               <div>
                 <h2 className="text-sm font-semibold text-[#b3b3b3] uppercase tracking-wider mb-3">Upcoming ({upcoming.length})</h2>
                 <div className="space-y-3">
-                  {upcoming.map(b => <BookingCard key={b.id} booking={b} onCancel={handleCancel} cancelling={cancelling} />)}
+                  {upcoming.map((b, idx) => <BookingCard key={b.id} booking={b} onCancel={handleCancel} cancelling={cancelling} index={idx} />)}
                 </div>
               </div>
             )}
@@ -89,7 +108,7 @@ export default function BookingsPage() {
               <div>
                 <h2 className="text-sm font-semibold text-[#555] uppercase tracking-wider mb-3">Past & Cancelled ({past.length})</h2>
                 <div className="space-y-3">
-                  {past.map(b => <BookingCard key={b.id} booking={b} onCancel={handleCancel} cancelling={cancelling} isPast />)}
+                  {past.map((b, idx) => <BookingCard key={b.id} booking={b} onCancel={handleCancel} cancelling={cancelling} isPast index={idx} />)}
                 </div>
               </div>
             )}
@@ -101,15 +120,18 @@ export default function BookingsPage() {
   );
 }
 
-function BookingCard({ booking: b, onCancel, cancelling, isPast }) {
+function BookingCard({ booking: b, onCancel, cancelling, isPast, index = 0 }) {
   const seatsList = (() => { try { return JSON.parse(b.seats || "[]"); } catch { return []; } })();
   const isCancelled = b.status === "cancelled";
   const backdropUrl = TMDB_BACKDROP(b.backdrop_path);
 
   return (
-    <div className={`relative overflow-hidden rounded-2xl border transition-all group ${
-      isCancelled ? "border-white/5 opacity-60" : "border-white/8 hover:border-red-500/20"
-    }`}>
+    <div
+      className={`relative overflow-hidden rounded-2xl border transition-all group scroll-reveal ${
+      isCancelled ? "border-slate-500/20 opacity-60" : "border-purple-500/20 hover:border-red-500/25"
+    }`}
+      style={{ transitionDelay: `${index * 40}ms` }}
+    >
       {/* Backdrop faint bg */}
       {backdropUrl && (
         <div className="absolute inset-0 opacity-10" style={{ backgroundImage: `url(${backdropUrl})`, backgroundSize: "cover", backgroundPosition: "center" }} />
@@ -123,10 +145,10 @@ function BookingCard({ booking: b, onCancel, cancelling, isPast }) {
             <img
               src={`https://image.tmdb.org/t/p/w92${b.poster_path}`}
               alt={b.movie_title}
-              className="w-14 h-20 object-cover rounded-lg flex-none border border-white/10"
+              className="w-14 h-20 object-cover rounded-lg flex-none border border-purple-500/20"
             />
           ) : (
-            <div className="w-14 h-20 rounded-lg bg-white/5 border border-white/8 flex items-center justify-center flex-none">
+            <div className="w-14 h-20 rounded-lg bg-white/5 border border-purple-500/20 flex items-center justify-center flex-none">
               <Film size={20} className="text-[#333]" />
             </div>
           )}
@@ -161,13 +183,13 @@ function BookingCard({ booking: b, onCancel, cancelling, isPast }) {
           </div>
         </div>
 
-        <div className="flex items-center justify-between mt-4 pt-3 border-t border-white/5">
+        <div className="flex items-center justify-between mt-4 pt-3 border-t border-purple-500/15">
           <p className="text-[#444] text-xs font-mono">{b.booking_ref}</p>
           {!isCancelled && !isPast && (
             <button
               onClick={() => onCancel(b.id)}
               disabled={cancelling === b.id}
-              className="text-xs text-[#666] hover:text-red-400 border border-white/8 hover:border-red-500/30 px-3 py-1.5 rounded-lg transition-all disabled:opacity-50"
+              className="text-xs text-[#666] hover:text-red-400 border border-purple-500/20 hover:border-red-500/30 px-3 py-1.5 rounded-lg transition-all disabled:opacity-50"
             >
               {cancelling === b.id ? "Cancelling..." : "Cancel"}
             </button>

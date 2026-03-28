@@ -340,7 +340,7 @@ function ProcessingOverlay({ steps, currentStep, amount }) {
 export default function PaymentPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { isAuthenticated, init } = useAuthStore();
+  const { token, isHydrated, init } = useAuthStore();
 
   // Parse booking data from URL
   const showtimeId = searchParams.get("showtimeId");
@@ -368,8 +368,12 @@ export default function PaymentPage() {
 
   useEffect(() => {
     init();
-    if (!isAuthenticated()) router.push("/login");
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [init]);
+
+  useEffect(() => {
+    if (!isHydrated) return;
+    if (!token) router.push("/login");
+  }, [isHydrated, token, router]);
 
   const fillDemo = () => {
     setCard(DEMO_CARD);
