@@ -1,14 +1,15 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { CheckCircle, Download, Share2, Ticket, MapPin, Calendar, Clock, Film, Star, ArrowRight } from "lucide-react";
+import { CheckCircle, Download, Ticket, MapPin, Calendar, Clock, Film, ArrowRight } from "lucide-react";
+import toast from "react-hot-toast";
 
 export default function PaymentSuccessPage() {
   const searchParams = useSearchParams();
-  const router = useRouter();
-  const [confettiDone, setConfettiDone] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const canvasRef = useRef(null);
+  const ticketRef = useRef(null);
 
   const bookingRef = searchParams.get("bookingRef");
   const movie = searchParams.get("movie");
@@ -68,13 +69,65 @@ export default function PaymentSuccessPage() {
         ctx.restore();
       });
       if (anyAlive) frame = requestAnimationFrame(animate);
-      else setConfettiDone(true);
     };
     frame = requestAnimationFrame(animate);
     return () => { alive = false; cancelAnimationFrame(frame); };
   }, []);
 
   const methodLabels = { card: "Credit/Debit Card", upi: "UPI", netbanking: "Net Banking", wallet: "Wallet" };
+
+  const handleDownloadPdf = async () => {
+    if (!ticketRef.current || downloading) return;
+    try {
+      setDownloading(true);
+      const lines = [
+        "CINEBOOK E-TICKET",
+        `Booking Ref: ${bookingRef || "-"}`,
+        `Movie: ${movie || "-"}`,
+        `Theater: ${theater || "-"}`,
+        `Date: ${date || "-"}    Time: ${time || "-"}`,
+        `Format: ${format || "-"}`,
+        `Seats: ${seatsList.join(", ") || "-"}`,
+        `Total Paid: INR ${total || "-"}`,
+        `Payment Method: ${methodLabels[method] || method || "-"}`,
+      ];
+      const toPdfSafe = (str) => (str || "").replace(/[\\()]/g, "\\$&");
+      const streamLines = lines
+        .map((line, i) => `BT /F1 14 Tf 48 ${770 - i * 28} Td (${toPdfSafe(line)}) Tj ET`)
+        .join("\n");
+      const objects = [
+        "1 0 obj<< /Type /Catalog /Pages 2 0 R >>endobj\n",
+        "2 0 obj<< /Type /Pages /Kids [3 0 R] /Count 1 >>endobj\n",
+        "3 0 obj<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>endobj\n",
+        "4 0 obj<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>endobj\n",
+        `5 0 obj<< /Length ${streamLines.length} >>stream\n${streamLines}\nendstream\nendobj\n`,
+      ];
+      let pdf = "%PDF-1.4\n";
+      const offsets = [0];
+      objects.forEach((obj) => {
+        offsets.push(pdf.length);
+        pdf += obj;
+      });
+      const xrefStart = pdf.length;
+      pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
+      offsets.slice(1).forEach((offset) => {
+        pdf += `${String(offset).padStart(10, "0")} 00000 n \n`;
+      });
+      pdf += `trailer<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefStart}\n%%EOF`;
+      const blob = new Blob([pdf], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `cinebook-ticket-${bookingRef || "booking"}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success("Ticket PDF downloaded");
+    } catch {
+      toast.error("Failed to download ticket PDF");
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] relative overflow-hidden">
@@ -102,7 +155,7 @@ export default function PaymentSuccessPage() {
         </div>
 
         {/* E-TICKET */}
-        <div className="w-full max-w-md fade-up" style={{ animationDelay: "0.2s" }}>
+        <div className="w-full max-w-md fade-up scroll-reveal is-visible" style={{ animationDelay: "0.2s" }} ref={ticketRef}>
           <div className="ticket-card overflow-hidden">
             {/* Movie info strip */}
             <div className="p-5 pb-0">
@@ -111,10 +164,10 @@ export default function PaymentSuccessPage() {
                   <img
                     src={`https://image.tmdb.org/t/p/w92${poster}`}
                     alt={movie}
-                    className="w-16 h-24 object-cover rounded-lg flex-none border border-white/10"
+                    className="w-16 h-24 object-cover rounded-lg flex-none border border-purple-500/20"
                   />
                 ) : (
-                  <div className="w-16 h-24 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center flex-none">
+                  <div className="w-16 h-24 rounded-lg bg-white/5 border border-purple-500/20 flex items-center justify-center flex-none">
                     <Film size={24} className="text-[#444]" />
                   </div>
                 )}
@@ -191,14 +244,11 @@ export default function PaymentSuccessPage() {
         {/* Action Buttons */}
         <div className="flex gap-3 mt-6 w-full max-w-md fade-up" style={{ animationDelay: "0.4s" }}>
           <button
-            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-white/5 border border-white/10 text-[#b3b3b3] hover:text-white hover:border-white/20 transition-all text-sm font-medium"
+            onClick={handleDownloadPdf}
+            disabled={downloading}
+            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-white/5 border border-purple-500/20 text-[#b3b3b3] hover:text-white hover:border-purple-400/30 transition-all text-sm font-medium disabled:opacity-60"
           >
-            <Download size={16} /> Download
-          </button>
-          <button
-            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-white/5 border border-white/10 text-[#b3b3b3] hover:text-white hover:border-white/20 transition-all text-sm font-medium"
-          >
-            <Share2 size={16} /> Share
+            <Download size={16} /> {downloading ? "Preparing PDF..." : "Download PDF"}
           </button>
         </div>
 

@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
-import { Search, Menu, X, Film, User, LogOut, Ticket, ChevronDown, Bell } from "lucide-react";
+import { Search, Menu, X, Film, User, LogOut, Ticket, ChevronDown } from "lucide-react";
 import useAuthStore from "../hooks/useAuthStore";
 import toast from "react-hot-toast";
 
@@ -104,7 +104,7 @@ export default function Navbar() {
             <div className="relative flex items-center">
               {searchOpen ? (
                 <form onSubmit={handleSearch} className="flex items-center">
-                  <div className="flex items-center bg-black/90 border border-white/20 rounded overflow-hidden">
+                  <div className="flex items-center bg-black/90 border border-purple-500/25 rounded overflow-hidden">
                     <Search size={15} className="ml-3 text-[#b3b3b3] flex-none" />
                     <input
                       ref={searchRef}
@@ -148,8 +148,8 @@ export default function Navbar() {
                 </button>
 
                 {userMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-60 bg-[#141414] border border-white/10 rounded-xl overflow-hidden shadow-2xl shadow-black/80 fade-up">
-                    <div className="px-4 py-3.5 border-b border-white/8 bg-gradient-to-r from-red-950/30 to-transparent">
+                  <div className="absolute right-0 mt-2 w-60 bg-[#141414] border border-purple-500/20 rounded-xl overflow-hidden shadow-2xl shadow-black/80 fade-up">
+                    <div className="px-4 py-3.5 border-b border-purple-500/15 bg-gradient-to-r from-red-950/30 to-transparent">
                       <p className="text-sm font-semibold text-white">{user?.name}</p>
                       <p className="text-xs text-[#666] truncate mt-0.5">{user?.email}</p>
                     </div>
@@ -169,7 +169,7 @@ export default function Navbar() {
                     ))}
                     <button
                       onClick={handleLogout}
-                      className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/8 border-t border-white/8 transition-colors"
+                      className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/8 border-t border-purple-500/15 transition-colors"
                     >
                       <LogOut size={15} /> Sign Out
                     </button>
@@ -202,13 +202,13 @@ export default function Navbar() {
 
         {/* Mobile menu */}
         {menuOpen && (
-          <div className="lg:hidden bg-black/95 rounded-xl mb-3 p-4 border border-white/8 fade-up backdrop-blur-xl">
+          <div className="lg:hidden bg-black/95 rounded-xl mb-3 p-4 border border-purple-500/20 fade-up backdrop-blur-xl">
             {navLinks.map(([label, href]) => (
               <Link
                 key={label}
                 href={href}
                 onClick={() => setMenuOpen(false)}
-                className={`block py-3 text-sm border-b border-white/5 last:border-0 transition-colors ${
+                className={`block py-3 text-sm border-b border-purple-500/10 last:border-0 transition-colors ${
                   pathname === href ? "text-white font-semibold" : "text-[#b3b3b3] hover:text-white"
                 }`}
               >
@@ -216,8 +216,8 @@ export default function Navbar() {
               </Link>
             ))}
             {!isAuthenticated() && (
-              <div className="flex gap-2 mt-3 pt-3 border-t border-white/8">
-                <Link href="/login" className="flex-1 text-center py-2 text-sm text-[#b3b3b3] border border-white/15 rounded-lg">Sign In</Link>
+              <div className="flex gap-2 mt-3 pt-3 border-t border-purple-500/15">
+                <Link href="/login" className="flex-1 text-center py-2 text-sm text-[#b3b3b3] border border-purple-500/25 rounded-lg">Sign In</Link>
                 <Link href="/register" className="flex-1 text-center py-2 text-sm text-white bg-red-600 rounded-lg font-semibold">Join Free</Link>
               </div>
             )}
