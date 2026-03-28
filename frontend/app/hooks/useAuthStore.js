@@ -5,14 +5,18 @@ const useAuthStore = create((set, get) => ({
   user: null,
   token: null,
   isLoading: false,
+  isHydrated: false,
 
   init: () => {
     if (typeof window === "undefined") return;
+    if (get().isHydrated) return;
     const token = localStorage.getItem("cb_token");
     const user = localStorage.getItem("cb_user");
     if (token && user) {
-      set({ token, user: JSON.parse(user) });
+      set({ token, user: JSON.parse(user), isHydrated: true });
+      return;
     }
+    set({ isHydrated: true });
   },
 
   login: async (email, password) => {
@@ -46,7 +50,7 @@ const useAuthStore = create((set, get) => ({
   logout: () => {
     localStorage.removeItem("cb_token");
     localStorage.removeItem("cb_user");
-    set({ user: null, token: null });
+    set({ user: null, token: null, isHydrated: true });
   },
 
   isAuthenticated: () => !!get().token,

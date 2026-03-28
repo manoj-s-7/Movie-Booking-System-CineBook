@@ -41,7 +41,7 @@ export default function HeroSlider({ movies = [] }) {
   const rating = movie.vote_average?.toFixed(1);
 
   return (
-    <div className="relative h-[88vh] min-h-[560px] overflow-hidden">
+    <div className="relative h-[76vh] min-h-[480px] overflow-hidden">
       {/* Backdrop */}
       <div
         key={current}
@@ -118,13 +118,13 @@ export default function HeroSlider({ movies = [] }) {
         <>
           <button
             onClick={prev}
-            className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/50 border border-white/15 flex items-center justify-center text-white hover:bg-black/80 transition-all hover:scale-110 backdrop-blur-sm"
+            className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/50 border border-purple-500/25 flex items-center justify-center text-white hover:bg-black/80 transition-all hover:scale-110 backdrop-blur-sm"
           >
             <ChevronLeft size={20} />
           </button>
           <button
             onClick={next}
-            className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/50 border border-white/15 flex items-center justify-center text-white hover:bg-black/80 transition-all hover:scale-110 backdrop-blur-sm"
+            className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/50 border border-purple-500/25 flex items-center justify-center text-white hover:bg-black/80 transition-all hover:scale-110 backdrop-blur-sm"
           >
             <ChevronRight size={20} />
           </button>
@@ -147,6 +147,10 @@ export default function HeroSlider({ movies = [] }) {
           ))}
         </div>
       )}
+
+      <div className="absolute bottom-2 left-1/2 -translate-x-1/2 text-[10px] tracking-[0.25em] text-[#777] no-print">
+        SCROLL FOR MORE
+      </div>
     </div>
   );
 }

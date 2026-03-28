@@ -13,9 +13,9 @@ import {
 import toast from "react-hot-toast";
 
 const SEAT_TYPE_CONFIG = {
-  recliner: { label: "Recliner",  color: "#a855f7", bg: "rgba(168,85,247,0.12)", border: "rgba(168,85,247,0.45)", multiplier: 1.8  },
+  standard: { label: "Standard",  color: "#94a3b8", bg: "rgba(148,163,184,0.12)", border: "rgba(148,163,184,0.35)", multiplier: 1.0 },
   premium:  { label: "Premium",   color: "#f59e0b", bg: "rgba(245,158,11,0.12)", border: "rgba(245,197,24,0.45)", multiplier: 1.3  },
-  standard: { label: "Standard",  color: "#6b7280", bg: "rgba(255,255,255,0.06)", border: "rgba(255,255,255,0.15)", multiplier: 1.0 },
+  recliner: { label: "Recliner",  color: "#a855f7", bg: "rgba(168,85,247,0.12)", border: "rgba(168,85,247,0.45)", multiplier: 1.8  },
 };
 
 function Skeleton({ className = "" }) {
@@ -45,7 +45,7 @@ export default function BookingPage() {
   const { id: showtimeId } = useParams();
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { isAuthenticated, init } = useAuthStore();
+  const { token, isHydrated, init } = useAuthStore();
 
   const movieId = searchParams.get("movie");
   const title   = searchParams.get("title");
@@ -67,7 +67,11 @@ export default function BookingPage() {
 
   useEffect(() => {
     init();
-    if (!isAuthenticated()) {
+  }, [init]);
+
+  useEffect(() => {
+    if (!isHydrated) return;
+    if (!token) {
       toast.error("Please login to book tickets");
       router.push("/login");
       return;
@@ -76,7 +80,7 @@ export default function BookingPage() {
       .then(({ data }) => setSeats(data))
       .catch(() => toast.error("Failed to load seats. Please try again."))
       .finally(() => setLoading(false));
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isHydrated, token, router, showtimeId]);
 
   const seatPrice = (seatType) => price * (SEAT_TYPE_CONFIG[seatType]?.multiplier || 1);
 
@@ -99,7 +103,14 @@ export default function BookingPage() {
   const convenience  = totalAmount * 0.05;
   const grandTotal   = totalAmount + convenience;
 
-  const rows = useMemo(() => [...new Set(seats.map(s => s.row_label))].sort(), [seats]);
+  const rows = useMemo(() => {
+    const typeOrder = { standard: 0, premium: 1, recliner: 2 };
+    return [...new Set(seats.map(s => s.row_label))].sort((a, b) => {
+      const typeA = seats.find(s => s.row_label === a)?.seat_type || "standard";
+      const typeB = seats.find(s => s.row_label === b)?.seat_type || "standard";
+      return (typeOrder[typeA] - typeOrder[typeB]) || a.localeCompare(b);
+    });
+  }, [seats]);
 
   const stats = useMemo(() => {
     const total = seats.length;
@@ -173,11 +184,11 @@ export default function BookingPage() {
                 alt={title || "Movie"}
                 width={60}
                 height={90}
-                className="rounded-xl object-cover border border-white/10 shadow-2xl"
+                className="rounded-xl object-cover border border-purple-500/25 shadow-2xl"
               />
             </div>
           ) : (
-            <div className="w-[60px] h-[90px] rounded-xl bg-white/5 border border-white/10 flex items-center justify-center flex-none">
+            <div className="w-[60px] h-[90px] rounded-xl bg-white/5 border border-purple-500/25 flex items-center justify-center flex-none">
               <Film size={22} className="text-[#444]" />
             </div>
           )}
@@ -211,7 +222,7 @@ export default function BookingPage() {
           {[["1", "Select Seats", true], ["2", "Payment", false], ["3", "Confirmed", false]].map(([num, label, active], i) => (
             <div key={num} className="flex items-center gap-1.5">
               <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold border-2 transition-all ${
-                active ? "bg-red-600 border-red-500 text-white shadow-lg shadow-red-500/30" : "border-white/15 bg-white/5 text-[#444]"
+                active ? "bg-red-600 border-red-500 text-white shadow-lg shadow-red-500/30" : "border-purple-500/20 bg-white/5 text-[#444]"
               }`}>{num}</div>
               <span className={`text-sm hidden sm:block font-medium ${active ? "text-white" : "text-[#333]"}`}>{label}</span>
               {i < 2 && <ChevronRight size={13} className="text-[#222]" />}
@@ -254,19 +265,19 @@ export default function BookingPage() {
               <div className="flex items-center gap-1.5">
                 <button
                   onClick={() => setZoom(z => Math.max(0.7, z - 0.1))}
-                  className="w-8 h-8 rounded-lg bg-white/5 border border-white/8 flex items-center justify-center text-[#666] hover:text-white transition-all hover:bg-white/10"
+                  className="w-8 h-8 rounded-lg bg-white/5 border border-purple-500/20 flex items-center justify-center text-[#666] hover:text-white transition-all hover:bg-white/10"
                 >
                   <ZoomOut size={14} />
                 </button>
                 <button
                   onClick={() => setZoom(1)}
-                  className="w-8 h-8 rounded-lg bg-white/5 border border-white/8 flex items-center justify-center text-[#666] hover:text-white transition-all hover:bg-white/10 text-xs font-mono"
+                  className="w-8 h-8 rounded-lg bg-white/5 border border-purple-500/20 flex items-center justify-center text-[#666] hover:text-white transition-all hover:bg-white/10 text-xs font-mono"
                 >
                   {Math.round(zoom * 100)}%
                 </button>
                 <button
                   onClick={() => setZoom(z => Math.min(1.5, z + 0.1))}
-                  className="w-8 h-8 rounded-lg bg-white/5 border border-white/8 flex items-center justify-center text-[#666] hover:text-white transition-all hover:bg-white/10"
+                  className="w-8 h-8 rounded-lg bg-white/5 border border-purple-500/20 flex items-center justify-center text-[#666] hover:text-white transition-all hover:bg-white/10"
                 >
                   <ZoomIn size={14} />
                 </button>
