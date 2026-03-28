@@ -5,7 +5,8 @@ import Navbar from "../components/Navbar";
 import MovieCard from "../components/MovieCard";
 import Footer from "../components/Footer";
 import { moviesAPI } from "../lib/api";
-import { Search, X, SlidersHorizontal } from "lucide-react";
+import { Search, X } from "lucide-react";
+import { Tabs, Tab, Chip } from "@mui/material";
 
 const FILTERS = [
   { key: "popular", label: "Popular" },
@@ -66,6 +67,7 @@ export default function MoviesPage() {
 
   const handleSearch = (e) => { e.preventDefault(); setSearchQuery(searchInput); setPage(1); };
   const clearSearch = () => { setSearchInput(""); setSearchQuery(""); setPage(1); };
+  const filterValue = searchQuery ? false : activeFilter;
 
   return (
     <div className="min-h-screen bg-[#0a0a0a]">
@@ -84,7 +86,7 @@ export default function MoviesPage() {
             <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#555]" />
             <input type="text" value={searchInput} onChange={e => setSearchInput(e.target.value)}
               placeholder="Search movies..."
-              className="w-full bg-[#1a1a1a] border border-white/10 rounded-lg py-2.5 pl-10 pr-10 text-sm text-white placeholder-[#555] outline-none focus:border-red-600/50 focus:bg-[#1e1e1e] transition-all" />
+              className="w-full bg-[#1a1a1a] border border-purple-500/25 rounded-lg py-2.5 pl-10 pr-10 text-sm text-white placeholder-[#555] outline-none focus:border-red-600/50 focus:bg-[#1e1e1e] transition-all" />
             {searchInput && (
               <button type="button" onClick={clearSearch} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#555] hover:text-white">
                 <X size={13} />
@@ -95,25 +97,53 @@ export default function MoviesPage() {
 
         {/* Filter bar */}
         <div className="flex flex-wrap items-center gap-2 mb-6">
-          <div className="flex gap-1 bg-[#1a1a1a] p-1 rounded-lg border border-white/6">
-            {FILTERS.map(f => (
-              <button key={f.key} onClick={() => { setActiveFilter(f.key); setPage(1); setSearchQuery(""); setSearchInput(""); }}
-                className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${activeFilter === f.key && !searchQuery ? "bg-red-600 text-white shadow" : "text-[#b3b3b3] hover:text-white"}`}>
-                {f.label}
-              </button>
-            ))}
+          <div className="bg-[#141414] rounded-xl border border-purple-500/25 px-1 py-0.5">
+            <Tabs
+              value={filterValue}
+              onChange={(_, value) => {
+                setActiveFilter(value);
+                setPage(1);
+                setSearchQuery("");
+                setSearchInput("");
+              }}
+              textColor="inherit"
+              indicatorColor="secondary"
+              sx={{
+                minHeight: 42,
+                "& .MuiTabs-indicator": { backgroundColor: "#f84464", height: 3, borderRadius: 12 },
+                "& .MuiTab-root": { color: "#9ca3af", textTransform: "none", fontWeight: 600, minHeight: 42 },
+                "& .Mui-selected": { color: "#ffffff !important" },
+              }}
+            >
+              {FILTERS.map((f) => (
+                <Tab key={f.key} value={f.key} label={f.label} />
+              ))}
+            </Tabs>
           </div>
 
           <div className="flex gap-1.5 ml-2 flex-wrap">
-            <button onClick={() => setSelectedGenre(null)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${!selectedGenre ? "bg-white/10 border-white/20 text-white" : "border-white/8 text-[#666] hover:text-white hover:border-white/15"}`}>
-              All
-            </button>
-            {genres.slice(0, 8).map(g => (
-              <button key={g.id} onClick={() => setSelectedGenre(selectedGenre === g.id ? null : g.id)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${selectedGenre === g.id ? "bg-red-600/20 border-red-500/40 text-red-400" : "border-white/8 text-[#666] hover:text-white hover:border-white/15"}`}>
-                {g.name}
-              </button>
+            <Chip
+              label="All"
+              onClick={() => setSelectedGenre(null)}
+              variant={!selectedGenre ? "filled" : "outlined"}
+              sx={{
+                borderColor: "rgba(124,58,237,0.35)",
+                color: !selectedGenre ? "#fff" : "#9ca3af",
+                backgroundColor: !selectedGenre ? "rgba(124,58,237,0.35)" : "transparent",
+              }}
+            />
+            {genres.slice(0, 8).map((g) => (
+              <Chip
+                key={g.id}
+                label={g.name}
+                onClick={() => setSelectedGenre(selectedGenre === g.id ? null : g.id)}
+                variant={selectedGenre === g.id ? "filled" : "outlined"}
+                sx={{
+                  borderColor: selectedGenre === g.id ? "rgba(248,68,100,0.5)" : "rgba(124,58,237,0.35)",
+                  color: selectedGenre === g.id ? "#fecdd3" : "#9ca3af",
+                  backgroundColor: selectedGenre === g.id ? "rgba(248,68,100,0.2)" : "transparent",
+                }}
+              />
             ))}
           </div>
         </div>
@@ -144,12 +174,12 @@ export default function MoviesPage() {
         {!loading && !searchQuery && totalPages > 1 && (
           <div className="flex justify-center items-center gap-3 mt-10">
             <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
-              className="px-5 py-2 bg-[#1a1a1a] border border-white/8 rounded-lg text-sm text-[#b3b3b3] hover:text-white hover:bg-[#222] disabled:opacity-30 transition-all">
+              className="px-5 py-2 bg-[#1a1a1a] border border-purple-500/20 rounded-lg text-sm text-[#b3b3b3] hover:text-white hover:bg-[#222] disabled:opacity-30 transition-all">
               ← Prev
             </button>
             <span className="text-[#666] text-sm">Page {page} / {totalPages}</span>
             <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page >= totalPages}
-              className="px-5 py-2 bg-[#1a1a1a] border border-white/8 rounded-lg text-sm text-[#b3b3b3] hover:text-white hover:bg-[#222] disabled:opacity-30 transition-all">
+              className="px-5 py-2 bg-[#1a1a1a] border border-purple-500/20 rounded-lg text-sm text-[#b3b3b3] hover:text-white hover:bg-[#222] disabled:opacity-30 transition-all">
               Next →
             </button>
           </div>

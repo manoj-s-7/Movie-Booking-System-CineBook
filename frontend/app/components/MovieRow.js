@@ -1,12 +1,27 @@
 "use client";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import MovieCard from "./MovieCard";
 
 export default function MovieRow({ title, movies = [], accent }) {
   const rowRef = useRef(null);
+  const wrapperRef = useRef(null);
   const [showLeft, setShowLeft] = useState(false);
   const [showRight, setShowRight] = useState(true);
+
+  useEffect(() => {
+    if (!wrapperRef.current) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) entry.target.classList.add("is-visible");
+        });
+      },
+      { threshold: 0.15 }
+    );
+    observer.observe(wrapperRef.current);
+    return () => observer.disconnect();
+  }, []);
 
   const scroll = (dir) => {
     const el = rowRef.current;
@@ -33,7 +48,7 @@ export default function MovieRow({ title, movies = [], accent }) {
   }
 
   return (
-    <div className="mb-10 group/row relative">
+    <div ref={wrapperRef} className="mb-10 group/row relative scroll-reveal">
       {/* Title */}
       <div className="flex items-center gap-3 mb-4 px-1">
         <h2 className="text-lg sm:text-xl font-bold text-white">{title}</h2>
@@ -50,7 +65,7 @@ export default function MovieRow({ title, movies = [], accent }) {
             onClick={() => scroll("left")}
             className="absolute left-0 top-0 bottom-0 z-20 w-12 flex items-center justify-center bg-gradient-to-r from-[#0a0a0a] to-transparent text-white hover:from-black transition-all"
           >
-            <div className="w-8 h-8 rounded-full bg-black/60 border border-white/15 flex items-center justify-center hover:bg-black transition-all hover:scale-110">
+            <div className="w-8 h-8 rounded-full bg-black/60 border border-purple-500/25 flex items-center justify-center hover:bg-black transition-all hover:scale-110">
               <ChevronLeft size={18} />
             </div>
           </button>
@@ -77,7 +92,7 @@ export default function MovieRow({ title, movies = [], accent }) {
             onClick={() => scroll("right")}
             className="absolute right-0 top-0 bottom-0 z-20 w-12 flex items-center justify-center bg-gradient-to-l from-[#0a0a0a] to-transparent text-white hover:from-black transition-all"
           >
-            <div className="w-8 h-8 rounded-full bg-black/60 border border-white/15 flex items-center justify-center hover:bg-black transition-all hover:scale-110">
+            <div className="w-8 h-8 rounded-full bg-black/60 border border-purple-500/25 flex items-center justify-center hover:bg-black transition-all hover:scale-110">
               <ChevronRight size={18} />
             </div>
           </button>
